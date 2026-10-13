@@ -1,0 +1,26 @@
+stages:
+  extract_corpus:
+    cmd: python -m scripts.parse_civil_code
+    deps:
+      - data/raw/egyptian_civil_code.pdf
+      - src/legal_rag/parser.py
+      - src/legal_rag/text_normalizer.py
+      - scripts/parse_civil_code.py
+    outs:
+      - data/processed/egyptian_civil_code.json:
+          cache: true
+
+  validate_corpus:
+    cmd: pytest tests/test_corpus_validation.py
+    deps:
+      - data/processed/egyptian_civil_code.json
+      - tests/test_corpus_validation.py
+
+  chunk_corpus:
+    cmd: python -m scripts.chunk_corpus
+    deps:
+      - data/processed/egyptian_civil_code.json
+      - src/legal_rag/chunker.py
+    outs:
+      - data/processed/chunks.json:
+          cache: true

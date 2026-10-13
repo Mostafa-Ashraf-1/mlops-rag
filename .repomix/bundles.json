@@ -1,0 +1,12 @@
+{
+  "bundles": {
+    "mlops-rag-bundle-684": {
+      "name": "mlops-rag-bundle",
+      "created": "2026-10-09T21:19:01.472Z",
+      "lastUsed": "2026-10-09T21:25:31.011Z",
+      "tags": [],
+      "files": [],
+      "configPath": ".repomix/config/mlops-rag-bundle-repomix.config.json"
+    }
+  }
+}
