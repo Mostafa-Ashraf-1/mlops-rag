@@ -274,8 +274,7 @@ class CivilCodeParser:
             self.current_section = norm_en or norm_ar
             return True
         elif any(
-            norm_ar.startswith(k)
-            for k in ["أولا", "ثانيا", "ثالثا", "رابعا", "خامسا", "١-", "٢-"]
+            norm_ar.startswith(k) for k in ["أولا", "ثانيا", "ثالثا", "رابعا", "خامسا", "١-", "٢-"]
         ):
             self.current_topic = norm_en or norm_ar
             return True
@@ -376,9 +375,7 @@ class CivilCodeParser:
 
         return sorted(articles.values(), key=lambda x: x.article_number)
 
-    def _process_row(
-        self, col_ar: str, col_en: str, page_num: int, raw_articles: dict[int, dict]
-    ):
+    def _process_row(self, col_ar: str, col_en: str, page_num: int, raw_articles: dict[int, dict]):
         fixed_ar = fix_visual_arabic(col_ar)
 
         art_num = (
@@ -432,23 +429,15 @@ class CivilCodeParser:
             self.last_article_num = art_num
         else:
             is_heading = self._is_hierarchy_heading(fixed_ar, col_en)
-            if (
-                not is_heading
-                and self.last_article_num
-                and self.last_article_num in raw_articles
-            ):
+            if not is_heading and self.last_article_num and self.last_article_num in raw_articles:
                 clean_ar = normalize_arabic(fixed_ar)
                 clean_en = normalize_english(col_en)
                 prev = raw_articles[self.last_article_num]
                 if clean_ar:
                     prev["text_ar"] = (
-                        f"{prev['text_ar']}\n{clean_ar}".strip()
-                        if prev["text_ar"]
-                        else clean_ar
+                        f"{prev['text_ar']}\n{clean_ar}".strip() if prev["text_ar"] else clean_ar
                     )
                 if clean_en:
                     prev["text_en"] = (
-                        f"{prev['text_en']}\n{clean_en}".strip()
-                        if prev["text_en"]
-                        else clean_en
+                        f"{prev['text_en']}\n{clean_en}".strip() if prev["text_en"] else clean_en
                     )

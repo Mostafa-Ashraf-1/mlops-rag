@@ -122,9 +122,7 @@ class LegalRetriever:
                 )
                 pbar.update(len(batch))
 
-        print(
-            f"[✓] Done! Total chunks in ChromaDB: {self.collection.count()}", flush=True
-        )
+        print(f"[✓] Done! Total chunks in ChromaDB: {self.collection.count()}", flush=True)
 
     def search(
         self,
@@ -152,9 +150,7 @@ class LegalRetriever:
         hits: list[dict[str, Any]] = []
         if results and results["ids"] and results["ids"][0]:
             for idx in range(len(results["ids"][0])):
-                distance = (
-                    results["distances"][0][idx] if results.get("distances") else 0.0
-                )
+                distance = results["distances"][0][idx] if results.get("distances") else 0.0
                 score = round(float(1.0 - distance), 4)
 
                 hits.append(

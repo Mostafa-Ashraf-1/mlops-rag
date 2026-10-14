@@ -2,22 +2,14 @@ from pydantic import BaseModel, Field
 
 
 class ArticleRecord(BaseModel):
-    article_number: int = Field(
-        ..., ge=1, le=1149, description="Sequential article number"
-    )
+    article_number: int = Field(..., ge=1, le=1149, description="Sequential article number")
     book: str | None = Field(default=None, description="Book title hierarchy")
     chapter: str | None = Field(default=None, description="Chapter title hierarchy")
     section: str | None = Field(default=None, description="Section title hierarchy")
     topic: str | None = Field(default=None, description="Topic or subtopic")
-    text_ar: str = Field(
-        ..., min_length=5, description="Normalized Arabic article text"
-    )
-    text_en: str = Field(
-        ..., min_length=5, description="Normalized English article text"
-    )
-    is_repealed: bool = Field(
-        default=False, description="Whether the article has been repealed"
-    )
+    text_ar: str = Field(..., min_length=5, description="Normalized Arabic article text")
+    text_en: str = Field(..., min_length=5, description="Normalized English article text")
+    is_repealed: bool = Field(default=False, description="Whether the article has been repealed")
     source_page: int = Field(..., ge=1, description="Page number in original PDF")
     citation: str = Field(..., description="Canonical citation format")
 
@@ -28,9 +20,7 @@ class ArticleChunk(BaseModel):
     paragraph_index: int | None = Field(
         default=None, description="Index of paragraph within article"
     )
-    total_paragraphs: int = Field(
-        default=1, description="Total paragraphs in this article"
-    )
+    total_paragraphs: int = Field(default=1, description="Total paragraphs in this article")
     book: str | None = None
     chapter: str | None = None
     section: str | None = None
@@ -45,9 +35,7 @@ class ArticleChunk(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     articles_loaded: int = Field(default=0, description="Total articles in memory")
-    documents_indexed: int = Field(
-        default=0, description="Total chunks indexed in vector store"
-    )
+    documents_indexed: int = Field(default=0, description="Total chunks indexed in vector store")
 
 
 class MetadataResponse(BaseModel):
@@ -60,9 +48,7 @@ class MetadataResponse(BaseModel):
 
 class AskRequest(BaseModel):
     question: str = Field(..., min_length=3, description="Legal question to ask")
-    top_k: int = Field(
-        default=3, ge=1, le=10, description="Number of articles to retrieve"
-    )
+    top_k: int = Field(default=3, ge=1, le=10, description="Number of articles to retrieve")
 
 
 class AskResponse(BaseModel):

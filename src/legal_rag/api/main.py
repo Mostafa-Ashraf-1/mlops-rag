@@ -32,9 +32,7 @@ async def lifespan(app: FastAPI):
     global RETRIEVER
     # 1. Load articles from JSON
     if settings.PROCESSED_JSON_PATH.exists():
-        with open(
-            settings.PROCESSED_JSON_PATH, "r", encoding="utf-8"
-        ) as f:  
+        with open(settings.PROCESSED_JSON_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
             for item in data:
                 record = ArticleRecord(**item)
@@ -128,18 +126,14 @@ async def ask(request: AskRequest, req: Request):
         if hits:
             sources = list(dict.fromkeys(h["metadata"]["citation"] for h in hits))
             top_hit = hits[0]
-            answer = (
-                f"استناداً إلى {top_hit['metadata']['citation']}: {top_hit['document']}"
-            )
+            answer = f"استناداً إلى {top_hit['metadata']['citation']}: {top_hit['document']}"
         else:
             answer = "لم يتم العثور على نصوص قانونية مطابقة."
     else:
         # Fallback keyword match
         if 147 in CORPUS_STORE:
             sources.append(CORPUS_STORE[147].citation)
-            answer = (
-                f"تنص {CORPUS_STORE[147].citation} على: {CORPUS_STORE[147].text_ar}"
-            )
+            answer = f"تنص {CORPUS_STORE[147].citation} على: {CORPUS_STORE[147].text_ar}"
         else:
             answer = "لا توجد نتائج مطابقة."
 

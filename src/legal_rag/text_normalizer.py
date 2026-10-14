@@ -37,9 +37,7 @@ def is_arabic_reversed(text: str) -> bool:
 
     # 2. Marker frequency comparison
     reversed_markers = len(re.findall(r"\b(?:يف|ىلع|ىلا|ةدام|دقعلا|نوناقلا)\b", text))
-    logical_markers = len(
-        re.findall(r"\b(?:في|على|إلى|الى|مادة|العقد|القانون)\b", text)
-    )
+    logical_markers = len(re.findall(r"\b(?:في|على|إلى|الى|مادة|العقد|القانون)\b", text))
 
     logical_al = len(re.findall(r"\bال\w{2,}", text))
     reversed_al = len(re.findall(r"\w{2,}لا\b", text))
@@ -96,9 +94,7 @@ def extract_article_number(text: str) -> int | None:
     normalized = normalize_digits(text)
 
     # 1. Match logical order: "مادة 147", "مادة (147)", "Article 147", "rticle 147"
-    match = re.search(
-        r"(?:مادة|A?rticle)\s*[\(\[]?\s*(\d+)\s*[\)\]]?", normalized, re.IGNORECASE
-    )
+    match = re.search(r"(?:مادة|A?rticle)\s*[\(\[]?\s*(\d+)\s*[\)\]]?", normalized, re.IGNORECASE)
     if match:
         return int(match.group(1))
 

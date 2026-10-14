@@ -22,21 +22,15 @@ def test_article_numbers_contiguous_no_gaps(corpus_records):
     expected_numbers = list(range(1, 1150))
 
     missing = set(expected_numbers) - set(extracted_numbers)
-    assert (
-        not missing
-    ), f"Missing article numbers detected: {sorted(missing)[:10]}"
-    assert (
-        extracted_numbers == expected_numbers
-    ), "Articles are not in strictly sequential order"
+    assert not missing, f"Missing article numbers detected: {sorted(missing)[:10]}"
+    assert extracted_numbers == expected_numbers, "Articles are not in strictly sequential order"
 
 
 def test_every_record_has_non_empty_text_ar(corpus_records):
     """Asserts no article has blank or whitespace-only Arabic text."""
     for record in corpus_records:
         assert record.text_ar is not None
-        assert (
-            len(record.text_ar.strip()) >= 5
-        ), f"Article {record.article_number} has empty text"
+        assert len(record.text_ar.strip()) >= 5, f"Article {record.article_number} has empty text"
 
 
 def test_no_record_exceeds_sane_length(corpus_records):
