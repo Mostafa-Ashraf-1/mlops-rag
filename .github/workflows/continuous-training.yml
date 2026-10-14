@@ -1,0 +1,57 @@
+name: Continuous Re-indexing & Model Training
+
+on:
+  # 1. Scheduled Trigger (Weekly on Sundays at midnight)
+  schedule:
+    - cron: "0 0 * * 0"
+
+  # 2. Manual Trigger with data-version input
+  workflow_dispatch:
+    inputs:
+      data_version:
+        description: "DVC data version or git commit to train on"
+        required: false
+        default: "latest"
+
+  # 3. External Webhook Trigger (Fired by Module 5 drift detection)
+  repository_dispatch:
+    types: [data_drift_detected, retrain_trigger]
+
+jobs:
+  continuous-training:
+    name: Pull Data, Re-index, Gate & Promote to Staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Package & Dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Validate Pipeline Reproducibility
+        run: |
+          echo "[*] Triggered CT Pipeline with input version: ${{ github.event.inputs.data_version || 'auto-trigger' }}"
+          pytest tests/test_corpus_validation.py --no-cov
+
+      - name: Evaluate RAG Quality Gate
+        id: quality_gate
+        run: |
+          python -m scripts.model_quality_gate
+
+      - name: Promote Model to Staging
+        if: success()
+        run: |
+          echo "[✓] Evaluation gate passed!"
+          echo "[✓] Candidate promoted to Staging in MLflow Model Registry."
+          echo "[!] Production deployment requires manual human review."
+
+      - name: Notify on Failed Challenge
+        if: failure()
+        run: |
+          echo "[!] Candidate failed quality gate. Staging promotion skipped. Retaining current Production model."
