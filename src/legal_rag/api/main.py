@@ -32,7 +32,9 @@ async def lifespan(app: FastAPI):
     global RETRIEVER
     # 1. Load articles from JSON
     if settings.PROCESSED_JSON_PATH.exists():
-        with open(settings.PROCESSED_JSON_PATH, "r", encoding="utf-8") as f:  # noqa: ASYNC230
+        with open(
+            settings.PROCESSED_JSON_PATH, "r", encoding="utf-8"
+        ) as f:  
             data = json.load(f)
             for item in data:
                 record = ArticleRecord(**item)
