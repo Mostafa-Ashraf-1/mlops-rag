@@ -1,9 +1,10 @@
-from legal_rag.schemas import ArticleRecord
 from legal_rag.chunker import LegalArticleChunker
+from legal_rag.schemas import ArticleRecord
+
 
 def test_chunk_article_single_and_multi():
     chunker = LegalArticleChunker(max_tokens=512)
-    
+
     # Test single paragraph
     art1 = ArticleRecord(
         article_number=147,
@@ -15,7 +16,7 @@ def test_chunk_article_single_and_multi():
         text_en="The contract makes the law of the parties.",
         is_repealed=False,
         source_page=34,
-        citation="Egyptian Civil Code, Article 147"
+        citation="Egyptian Civil Code, Article 147",
     )
     chunks1 = chunker.chunk_article(art1)
     assert len(chunks1) == 1
@@ -33,7 +34,7 @@ def test_chunk_article_single_and_multi():
         text_en="Provisions of laws govern all matters.",
         is_repealed=False,
         source_page=1,
-        citation="Egyptian Civil Code, Article 1"
+        citation="Egyptian Civil Code, Article 1",
     )
     chunks2 = chunker.chunk_article(art2)
     assert len(chunks2) == 2

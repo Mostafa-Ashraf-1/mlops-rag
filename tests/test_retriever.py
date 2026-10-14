@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from legal_rag.retriever import LegalRetriever
 from legal_rag.schemas import ArticleChunk
 

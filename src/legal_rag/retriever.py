@@ -1,8 +1,10 @@
-from typing import List, Dict, Any, Optional
 from pathlib import Path
-from tqdm import tqdm
+from typing import Any
+
 import chromadb
 from sentence_transformers import SentenceTransformer
+from tqdm import tqdm
+
 from legal_rag.config import settings
 from legal_rag.schemas import ArticleChunk
 
@@ -26,10 +28,9 @@ class LegalRetriever:
         self.persist_directory.mkdir(parents=True, exist_ok=True)
         self.client = chromadb.PersistentClient(path=str(self.persist_directory))
         self.collection = self.client.get_or_create_collection(
-            name=self.collection_name,
-            metadata={"hnsw:space": "cosine"}
+            name=self.collection_name, metadata={"hnsw:space": "cosine"}
         )
-        self._model: Optional[SentenceTransformer] = None
+        self._model: SentenceTransformer | None = None
 
     @property
     def model(self) -> SentenceTransformer:
@@ -38,11 +39,12 @@ class LegalRetriever:
             self._model = SentenceTransformer(self.model_name)
         return self._model
 
-    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: list[str]) -> list[list[float]]:
         """Generates normalized vector embeddings using Qwen3-Embedding-0.6B."""
         if not texts:
             return []
         import torch
+
         with torch.no_grad():
             embeddings = self.model.encode(
                 texts,
@@ -54,7 +56,12 @@ class LegalRetriever:
             return embeddings.tolist()
         return embeddings
 
-    def index_chunks(self, chunks: List[ArticleChunk], batch_size: int = 64, skip_existing: bool = True):
+    def index_chunks(
+        self,
+        chunks: list[ArticleChunk],
+        batch_size: int = 64,
+        skip_existing: bool = True,
+    ):
         """Indexes legal chunks into ChromaDB with a real-time visual progress bar and resume support."""
         if not chunks:
             return
@@ -67,21 +74,34 @@ class LegalRetriever:
 
         total_to_index = len(chunks_to_index)
         if total_to_index == 0:
-            print(f"[✓] All {len(chunks)} chunks are already indexed in ChromaDB.", flush=True)
+            print(
+                f"[✓] All {len(chunks)} chunks are already indexed in ChromaDB.",
+                flush=True,
+            )
             return
 
         skipped = len(chunks) - total_to_index
-        print(f"[*] Resuming: indexing {total_to_index} remaining chunks ({skipped} already cached in ChromaDB)...", flush=True)
+        print(
+            f"[*] Resuming: indexing {total_to_index} remaining chunks ({skipped} already cached in ChromaDB)...",
+            flush=True,
+        )
 
-        with tqdm(total=total_to_index, desc="Indexing legal chunks", unit="chunk", dynamic_ncols=True) as pbar:
+        with tqdm(
+            total=total_to_index,
+            desc="Indexing legal chunks",
+            unit="chunk",
+            dynamic_ncols=True,
+        ) as pbar:
             for i in range(0, total_to_index, batch_size):
-                batch = chunks_to_index[i:i + batch_size]
+                batch = chunks_to_index[i : i + batch_size]
                 ids = [c.chunk_id for c in batch]
                 documents = [c.text_ar for c in batch]
                 metadatas = [
                     {
                         "article_number": c.article_number,
-                        "paragraph_index": c.paragraph_index if c.paragraph_index is not None else 0,
+                        "paragraph_index": (
+                            c.paragraph_index if c.paragraph_index is not None else 0
+                        ),
                         "total_paragraphs": c.total_paragraphs,
                         "book": c.book or "",
                         "chapter": c.chapter or "",
@@ -102,14 +122,16 @@ class LegalRetriever:
                 )
                 pbar.update(len(batch))
 
-        print(f"[✓] Done! Total chunks in ChromaDB: {self.collection.count()}", flush=True)
+        print(
+            f"[✓] Done! Total chunks in ChromaDB: {self.collection.count()}", flush=True
+        )
 
     def search(
         self,
         query: str,
         top_k: int = 3,
         filter_repealed: bool = False,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Executes dense semantic similarity search against the legal corpus.
         Returns matched documents with citations and similarity scores.
@@ -127,18 +149,22 @@ class LegalRetriever:
             include=["documents", "metadatas", "distances"],
         )
 
-        hits: List[Dict[str, Any]] = []
+        hits: list[dict[str, Any]] = []
         if results and results["ids"] and results["ids"][0]:
             for idx in range(len(results["ids"][0])):
-                distance = results["distances"][0][idx] if results.get("distances") else 0.0
+                distance = (
+                    results["distances"][0][idx] if results.get("distances") else 0.0
+                )
                 score = round(float(1.0 - distance), 4)
 
-                hits.append({
-                    "chunk_id": results["ids"][0][idx],
-                    "document": results["documents"][0][idx],
-                    "metadata": results["metadatas"][0][idx],
-                    "score": score,
-                })
+                hits.append(
+                    {
+                        "chunk_id": results["ids"][0][idx],
+                        "document": results["documents"][0][idx],
+                        "metadata": results["metadatas"][0][idx],
+                        "score": score,
+                    }
+                )
 
         return hits
 

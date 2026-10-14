@@ -1,6 +1,6 @@
 import re
-from typing import List
-from legal_rag.schemas import ArticleRecord, ArticleChunk
+
+from legal_rag.schemas import ArticleChunk, ArticleRecord
 
 
 class LegalArticleChunker:
@@ -12,13 +12,13 @@ class LegalArticleChunker:
     def __init__(self, max_tokens: int = 512):
         self.max_tokens = max_tokens
 
-    def chunk_article(self, article: ArticleRecord) -> List[ArticleChunk]:
+    def chunk_article(self, article: ArticleRecord) -> list[ArticleChunk]:
         """
         Chunks an article respecting provision boundaries.
         Never cuts mid-sentence or mid-provision.
         """
         # Split on paragraph markers: (1), (2) or (١), (٢)
-        paragraphs = re.split(r'(?=\([0-9٠-٩]+\))', article.text_ar)
+        paragraphs = re.split(r"(?=\([0-9٠-٩]+\))", article.text_ar)
         paragraphs = [p.strip() for p in paragraphs if p.strip()]
 
         if not paragraphs:
