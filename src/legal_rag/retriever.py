@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional
 from pathlib import Path
+from tqdm import tqdm
 import chromadb
 from sentence_transformers import SentenceTransformer
 from legal_rag.config import settings
@@ -41,45 +42,67 @@ class LegalRetriever:
         """Generates normalized vector embeddings using Qwen3-Embedding-0.6B."""
         if not texts:
             return []
-        embeddings = self.model.encode(
-            texts,
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-            show_progress_bar=False,
-        )
-        return embeddings.tolist()
+        import torch
+        with torch.no_grad():
+            embeddings = self.model.encode(
+                texts,
+                convert_to_numpy=True,
+                normalize_embeddings=True,
+                show_progress_bar=False,
+            )
+        if hasattr(embeddings, "tolist"):
+            return embeddings.tolist()
+        return embeddings
 
-    def index_chunks(self, chunks: List[ArticleChunk], batch_size: int = 64):
-        """Indexes legal chunks into ChromaDB with rich metadata for citation tracking."""
+    def index_chunks(self, chunks: List[ArticleChunk], batch_size: int = 64, skip_existing: bool = True):
+        """Indexes legal chunks into ChromaDB with a real-time visual progress bar and resume support."""
         if not chunks:
             return
 
-        for i in range(0, len(chunks), batch_size):
-            batch = chunks[i:i + batch_size]
-            ids = [c.chunk_id for c in batch]
-            documents = [c.text_ar for c in batch]
-            metadatas = [
-                {
-                    "article_number": c.article_number,
-                    "paragraph_index": c.paragraph_index if c.paragraph_index is not None else 0,
-                    "total_paragraphs": c.total_paragraphs,
-                    "book": c.book or "",
-                    "chapter": c.chapter or "",
-                    "section": c.section or "",
-                    "topic": c.topic or "",
-                    "citation": c.citation,
-                    "is_repealed": c.is_repealed,
-                }
-                for c in batch
-            ]
-            embeddings = self.embed_texts(documents)
+        if skip_existing:
+            existing_ids = set(self.collection.get(include=[])["ids"])
+            chunks_to_index = [c for c in chunks if c.chunk_id not in existing_ids]
+        else:
+            chunks_to_index = chunks
 
-            self.collection.upsert(
-                ids=ids,
-                documents=documents,
-                metadatas=metadatas,
-                embeddings=embeddings,
-            )
+        total_to_index = len(chunks_to_index)
+        if total_to_index == 0:
+            print(f"[✓] All {len(chunks)} chunks are already indexed in ChromaDB.", flush=True)
+            return
+
+        skipped = len(chunks) - total_to_index
+        print(f"[*] Resuming: indexing {total_to_index} remaining chunks ({skipped} already cached in ChromaDB)...", flush=True)
+
+        with tqdm(total=total_to_index, desc="Indexing legal chunks", unit="chunk", dynamic_ncols=True) as pbar:
+            for i in range(0, total_to_index, batch_size):
+                batch = chunks_to_index[i:i + batch_size]
+                ids = [c.chunk_id for c in batch]
+                documents = [c.text_ar for c in batch]
+                metadatas = [
+                    {
+                        "article_number": c.article_number,
+                        "paragraph_index": c.paragraph_index if c.paragraph_index is not None else 0,
+                        "total_paragraphs": c.total_paragraphs,
+                        "book": c.book or "",
+                        "chapter": c.chapter or "",
+                        "section": c.section or "",
+                        "topic": c.topic or "",
+                        "citation": c.citation,
+                        "is_repealed": c.is_repealed,
+                    }
+                    for c in batch
+                ]
+                embeddings = self.embed_texts(documents)
+
+                self.collection.upsert(
+                    ids=ids,
+                    documents=documents,
+                    metadatas=metadatas,
+                    embeddings=embeddings,
+                )
+                pbar.update(len(batch))
+
+        print(f"[✓] Done! Total chunks in ChromaDB: {self.collection.count()}", flush=True)
 
     def search(
         self,
@@ -122,17 +145,3 @@ class LegalRetriever:
     def count(self) -> int:
         """Returns the number of indexed documents in the collection."""
         return self.collection.count()
-
-    def embed_texts(self, texts: List[str]) -> List[List[float]]:
-        """Generates normalized vector embeddings using Qwen3-Embedding-0.6B."""
-        if not texts:
-            return []
-        embeddings = self.model.encode(
-            texts,
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-            show_progress_bar=False,
-        )
-        if hasattr(embeddings, "tolist"):
-            return embeddings.tolist()
-        return embeddings
