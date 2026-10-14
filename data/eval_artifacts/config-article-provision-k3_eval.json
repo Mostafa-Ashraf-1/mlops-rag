@@ -1,0 +1,17 @@
+{
+  "config": {
+    "run_name": "config-article-provision-k3",
+    "chunking_strategy": "article_provision_boundary",
+    "chunk_size": 512,
+    "chunk_overlap": 0,
+    "top_k": 3,
+    "embedding_model": "Qwen/Qwen3-Embedding-0.6B"
+  },
+  "metrics": {
+    "hit_rate": 0.875,
+    "mrr": 0.8125,
+    "faithfulness": 0.8562,
+    "avg_latency_ms": 1274.93
+  },
+  "benchmark_size": 8
+}
