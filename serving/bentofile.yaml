@@ -1,0 +1,18 @@
+service: "serving.service:LegalRAGService"
+labels:
+  owner: student
+  project: legal-rag
+  milestone: "module-3"
+include:
+  - "serving/"
+  - "src/"
+  - "data/processed/chroma_db/"
+python:
+  packages:
+    - bentoml>=1.2.0
+    - fastapi>=0.110.0
+    - pydantic>=2.6.0
+    - sentence-transformers>=3.0.0
+    - chromadb>=0.5.0
+    - python-bidi>=0.4.2
+    - torch>=2.2.0
