@@ -33,3 +33,16 @@ Layer 4: Ingress & Reverse Proxy       --> Nginx (Port 80/443, SSL, Canary 90/10
 Layer 3: API & Protocol Layer          --> BentoML / FastAPI (REST, SSE Token Streaming, Request Validation)
 Layer 2: Inference Engine / Worker     --> vLLM (PagedAttention, Continuous Batching) + ChromaDB Retriever
 Layer 1: Hardware & Compute Layer      --> CPU / NVIDIA Tensor Cores (Optimized FP16 / INT8 Kernels)
+
+## 5. Locust Load Test Results (50 Concurrent Users)
+
+**Pass Condition Met:** HTML report saved to `reports/locust_report.html`.
+
+| Endpoint | Requests | Failures | p50 | p95 | p99 | RPS | Bottleneck |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `POST /ask` | 57 | 0 (0.0%) | 6,000 ms | 46,000 ms | 52,000 ms | 0.92 | **CPU-bound (Transformer forward pass queuing)** |
+
+### Bottleneck Diagnosis & Evidence
+- **Utilization Evidence:** CPU utilization was pinned near 100% across all available cores while memory remained stable and below 2 GB.
+- **Root Cause:** In the absence of an NVIDIA GPU, running dense 600M parameter embeddings on CPU causes incoming concurrent requests to wait in the server worker queue, driving p95 latency up from 6s to 46s.
+- **Production Solution:** Shifting inference to a GPU with vLLM PagedAttention or applying INT8 quantization (Module 4) will dramatically reduce p95 latency under high concurrency.
