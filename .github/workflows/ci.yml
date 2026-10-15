@@ -1,0 +1,92 @@
+name: CI Quality Gate & Docker Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: Lint & Code Style
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Linting Tools
+        run: pip install ruff black
+
+      - name: Run Ruff Linter
+        run: ruff check src tests
+
+      - name: Run Black Formatter Check
+        run: black --check src tests
+
+  test:
+    name: Unit & Validation Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run Pytest Suite with Coverage Gate (>=70%)
+        run: pytest -v --cov=src/legal_rag --cov-fail-under=70
+
+  quality-gate:
+    name: RAG Quality Gate (Faithfulness >= 0.75)
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Package
+        run: pip install -e .
+
+      - name: Verify Model Quality Gate
+        run: python -m scripts.model_quality_gate
+
+  build:
+    name: Docker Container Build
+    needs: quality-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Ensure Directory Exists
+        run: mkdir -p data/processed
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: false
+          tags: legal-rag-api:latest

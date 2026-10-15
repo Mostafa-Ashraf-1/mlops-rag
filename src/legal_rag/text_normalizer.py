@@ -1,6 +1,5 @@
 import re
 import unicodedata
-from typing import Optional
 
 try:
     from bidi.algorithm import get_display
@@ -11,10 +10,10 @@ except (ImportError, ModuleNotFoundError):
         get_display = None
 
 # Arabic-Indic to Western Digit translation
-ARABIC_INDIC_DIGITS = str.maketrans('٠١٢٣٤٥٦٧٨٩', '0123456789')
+ARABIC_INDIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 
 # Regex for Arabic diacritics
-TASHKEEL_REGEX = re.compile(r'[\u0617-\u061A\u064B-\u0652\u0670]')
+TASHKEEL_REGEX = re.compile(r"[\u0617-\u061A\u064B-\u0652\u0670]")
 
 
 def normalize_digits(text: str) -> str:
@@ -33,15 +32,15 @@ def is_arabic_reversed(text: str) -> bool:
         return False
 
     # 1. Definitive indicator: words starting with 'ة'
-    if re.search(r'\bة\w+', text):
+    if re.search(r"\bة\w+", text):
         return True
 
     # 2. Marker frequency comparison
-    reversed_markers = len(re.findall(r'\b(?:يف|ىلع|ىلا|ةدام|دقعلا|نوناقلا)\b', text))
-    logical_markers = len(re.findall(r'\b(?:في|على|إلى|الى|مادة|العقد|القانون)\b', text))
+    reversed_markers = len(re.findall(r"\b(?:يف|ىلع|ىلا|ةدام|دقعلا|نوناقلا)\b", text))
+    logical_markers = len(re.findall(r"\b(?:في|على|إلى|الى|مادة|العقد|القانون)\b", text))
 
-    logical_al = len(re.findall(r'\bال\w{2,}', text))
-    reversed_al = len(re.findall(r'\w{2,}لا\b', text))
+    logical_al = len(re.findall(r"\bال\w{2,}", text))
+    reversed_al = len(re.findall(r"\w{2,}لا\b", text))
 
     return (reversed_markers + reversed_al) > (logical_markers + logical_al)
 
@@ -71,15 +70,15 @@ def fix_visual_arabic(text: str) -> str:
                 reordered = get_display(stripped, base_dir="R")
             except TypeError:
                 reordered = get_display(stripped)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 reordered = stripped
 
             # Fix Lam-Alef ligature inversions caused by BiDi on PDF text
-            reordered = re.sub(r'\bال\b', 'لا', reordered)
-            reordered = re.sub(r'\bوال\b', 'ولا', reordered)
-            reordered = re.sub(r'\bفال\b', 'فلا', reordered)
-            reordered = re.sub(r'\bاال\b', 'الا', reordered)
-            reordered = re.sub(r'\bبال\b', 'بلا', reordered)
+            reordered = re.sub(r"\bال\b", "لا", reordered)
+            reordered = re.sub(r"\bوال\b", "ولا", reordered)
+            reordered = re.sub(r"\bفال\b", "فلا", reordered)
+            reordered = re.sub(r"\bاال\b", "الا", reordered)
+            reordered = re.sub(r"\bبال\b", "بلا", reordered)
 
             fixed_lines.append(reordered)
         else:
@@ -88,19 +87,19 @@ def fix_visual_arabic(text: str) -> str:
     return "\n".join(fixed_lines)
 
 
-def extract_article_number(text: str) -> Optional[int]:
+def extract_article_number(text: str) -> int | None:
     """Extracts integer article number from Arabic or English heading."""
     if not text:
         return None
     normalized = normalize_digits(text)
 
     # 1. Match logical order: "مادة 147", "مادة (147)", "Article 147", "rticle 147"
-    match = re.search(r'(?:مادة|A?rticle)\s*[\(\[]?\s*(\d+)\s*[\)\]]?', normalized, re.IGNORECASE)
+    match = re.search(r"(?:مادة|A?rticle)\s*[\(\[]?\s*(\d+)\s*[\)\]]?", normalized, re.IGNORECASE)
     if match:
         return int(match.group(1))
 
     # 2. Match reversed visual order: "147 ةدام", "( 147 ) ةدام"
-    rev_match = re.search(r'[\(\[]?\s*(\d+)\s*[\)\]]?\s*ةدام', normalized)
+    rev_match = re.search(r"[\(\[]?\s*(\d+)\s*[\)\]]?\s*ةدام", normalized)
     if rev_match:
         return int(rev_match.group(1))
 
@@ -118,21 +117,21 @@ def normalize_arabic(text: str) -> str:
     if not text:
         return ""
 
-    text = unicodedata.normalize('NFKC', text)
+    text = unicodedata.normalize("NFKC", text)
     text = normalize_digits(text)
 
     # Remove Tatweel
-    text = re.sub(r'\u0640', '', text)
+    text = re.sub(r"\u0640", "", text)
 
     # Strip Tashkeel
-    text = TASHKEEL_REGEX.sub('', text)
+    text = TASHKEEL_REGEX.sub("", text)
 
     # Normalize Alef forms
-    text = re.sub(r'[إأآٱ]', 'ا', text)
+    text = re.sub(r"[إأآٱ]", "ا", text)
 
     # Normalize excessive spaces and linebreaks
-    text = re.sub(r'[ \t]+', ' ', text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
 
     return text.strip()
 
@@ -141,7 +140,7 @@ def normalize_english(text: str) -> str:
     """Normalizes English legal text."""
     if not text:
         return ""
-    text = unicodedata.normalize('NFKC', text)
-    text = re.sub(r'[ \t]+', ' ', text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = unicodedata.normalize("NFKC", text)
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()

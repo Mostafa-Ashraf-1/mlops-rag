@@ -1,9 +1,9 @@
 from legal_rag.text_normalizer import (
-    normalize_arabic,
-    normalize_english,
-    normalize_digits,
     extract_article_number,
     fix_visual_arabic,
+    normalize_arabic,
+    normalize_digits,
+    normalize_english,
 )
 
 
@@ -31,7 +31,7 @@ def test_normalize_arabic():
     normalized = normalize_arabic(raw)
     assert "َ" not in normalized  # No Tashkeel
     assert "ـ" not in normalized  # No Tatweel
-    assert "ا" in normalized     # Normalized Alef
+    assert "ا" in normalized  # Normalized Alef
     assert normalize_arabic("") == ""
 
 

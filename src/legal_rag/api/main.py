@@ -1,16 +1,16 @@
-import time
 import json
-import uuid
 import logging
+import time
+import uuid
 from contextlib import asynccontextmanager
-from typing import Dict, Any
 
-from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from legal_rag.config import settings
+from legal_rag.retriever import LegalRetriever
 from legal_rag.schemas import (
     ArticleRecord,
     AskRequest,
@@ -18,19 +18,18 @@ from legal_rag.schemas import (
     HealthResponse,
     MetadataResponse,
 )
-from legal_rag.text_normalizer import normalize_arabic, extract_article_number
-from legal_rag.retriever import LegalRetriever
+from legal_rag.text_normalizer import extract_article_number, normalize_arabic
 
 logger = logging.getLogger("legal_rag.api")
 
 # Global in-memory stores initialized once at startup
-CORPUS_STORE: Dict[int, ArticleRecord] = {}
+CORPUS_STORE: dict[int, ArticleRecord] = {}
 RETRIEVER: LegalRetriever = None  # type: ignore
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global CORPUS_STORE, RETRIEVER
+    global RETRIEVER
     # 1. Load articles from JSON
     if settings.PROCESSED_JSON_PATH.exists():
         with open(settings.PROCESSED_JSON_PATH, "r", encoding="utf-8") as f:
@@ -75,19 +74,21 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={"detail": "Invalid input format. Question must be non-empty string."},
     )
 
+
 @app.get("/health", response_model=HealthResponse)
 async def health():
     indexed_count = RETRIEVER.count() if RETRIEVER else 0
     if not CORPUS_STORE:
         return JSONResponse(
             status_code=503,
-            content={"status": "unhealthy", "detail": "Corpus not loaded"}
+            content={"status": "unhealthy", "detail": "Corpus not loaded"},
         )
     return HealthResponse(
         status="healthy",
         articles_loaded=len(CORPUS_STORE),
         documents_indexed=indexed_count,
     )
+
 
 @app.get("/metadata", response_model=MetadataResponse)
 async def metadata():

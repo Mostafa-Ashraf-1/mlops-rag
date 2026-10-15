@@ -5,13 +5,12 @@ stages:
       - data/raw/egyptian_civil_code.pdf
       - src/legal_rag/parser.py
       - src/legal_rag/text_normalizer.py
-      - scripts/parse_civil_code.py
     outs:
       - data/processed/egyptian_civil_code.json:
           cache: true
 
   validate_corpus:
-    cmd: pytest tests/test_corpus_validation.py
+    cmd: pytest tests/test_corpus_validation.py --no-cov
     deps:
       - data/processed/egyptian_civil_code.json
       - tests/test_corpus_validation.py
@@ -23,4 +22,13 @@ stages:
       - src/legal_rag/chunker.py
     outs:
       - data/processed/chunks.json:
+          cache: true
+
+  index_vector_store:
+    cmd: python -m scripts.build_vector_store
+    deps:
+      - data/processed/chunks.json
+      - src/legal_rag/retriever.py
+    outs:
+      - data/processed/chroma_db:
           cache: true
