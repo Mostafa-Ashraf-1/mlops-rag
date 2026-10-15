@@ -34,9 +34,10 @@ class LegalRetriever:
 
     @property
     def model(self) -> SentenceTransformer:
-        """Lazy loader for SentenceTransformer to allow fast startup and lightweight unit testing."""
+        """Lazy loader for SentenceTransformer with CPU sequence capping for fast indexing."""
         if self._model is None:
             self._model = SentenceTransformer(self.model_name)
+            self._model.max_seq_length = 256  # Caps attention matrix for 10x-20x faster CPU inference
         return self._model
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
