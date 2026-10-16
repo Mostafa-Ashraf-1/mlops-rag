@@ -17,7 +17,7 @@ class BatchReindexer:
     Processes documents in vectorized batches with resource and cost accounting.
     """
 
-    def __init__(self, retriever: LegalRetriever = None):
+    def __init__(self, retriever: LegalRetriever | None = None):
         self.retriever = retriever or LegalRetriever()
         self.chunker = LegalArticleChunker()
 
