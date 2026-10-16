@@ -46,3 +46,15 @@ Layer 1: Hardware & Compute Layer      --> CPU / NVIDIA Tensor Cores (Optimized 
 - **Utilization Evidence:** CPU utilization was pinned near 100% across all available cores while memory remained stable and below 2 GB.
 - **Root Cause:** In the absence of an NVIDIA GPU, running dense 600M parameter embeddings on CPU causes incoming concurrent requests to wait in the server worker queue, driving p95 latency up from 6s to 46s.
 - **Production Solution:** Shifting inference to a GPU with vLLM PagedAttention or applying INT8 quantization (Module 4) will dramatically reduce p95 latency under high concurrency.
+
+## 7. Deployment & Release Strategy Comparison Table (Handbook pg. 30)
+
+| Strategy | Traffic Mechanics | Risk Reduced | Infrastructure Cost | Real-World Company Example |
+| :--- | :--- | :--- | :--- | :--- |
+| **Canary Release** | Weighted reverse proxy splits live traffic (e.g. 90/10 -> 50/50 -> 100) | Limits blast radius of runtime latency/memory leaks to a small fraction of users | Low (runs both models side-by-side with shared capacity) | **Netflix** (Kayenta automated canary analysis) |
+| **Blue/Green** | Router switches 100% of traffic from Environment Blue to Green instantaneously | Eliminates service downtime during version deployment | High (requires 2× identical production infrastructure) | **Amazon** (Elastic Beanstalk Blue/Green) |
+| **A/B Testing** | User-segmented routing (e.g., hash of user ID) measuring business metrics | Business metric degradation (conversion, search click-through) | Moderate | **Booking.com** (continuous feature & model experimentation) |
+| **Shadow Mode (Mirroring)** | Ingress proxy mirrors asynchronous copy of live requests to candidate offline | 100% zero risk to users (candidate response is discarded, stable response returned) | Moderate to High (must compute predictions twice for every request) | **Uber Michelangelo** (shadowing ride-pricing and ETA models) |
+
+### Why Shadow Mode is the Safest Way to Validate Model Changes
+In high-liability domains like law or medical diagnosis, a newly trained candidate model might pass synthetic offline evaluations but fail silently on real-world edge cases. Shadow mode duplicates live production traffic to the candidate without serving its answers to users. Engineers can evaluate candidate predictions, latency, and hallucination rates against real legal queries with **absolute zero risk** of user impact.
