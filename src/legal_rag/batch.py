@@ -1,14 +1,14 @@
+import json
 import os
 import time
-import json
-import psutil
-from typing import List, Dict, Any
 from pathlib import Path
+from typing import Any
 
-from legal_rag.config import settings
-from legal_rag.schemas import ArticleRecord, ArticleChunk
+import psutil
+
 from legal_rag.chunker import LegalArticleChunker
 from legal_rag.retriever import LegalRetriever
+from legal_rag.schemas import ArticleChunk, ArticleRecord
 
 
 class BatchReindexer:
@@ -21,7 +21,7 @@ class BatchReindexer:
         self.retriever = retriever or LegalRetriever()
         self.chunker = LegalArticleChunker()
 
-    def reindex_amendments(self, amendment_file: Path) -> Dict[str, Any]:
+    def reindex_amendments(self, amendment_file: Path) -> dict[str, Any]:
         """Ingests, chunks, and batch-upserts new legal provisions into the vector store."""
         if not amendment_file.exists():
             raise FileNotFoundError(f"Amendment file not found at: {amendment_file}")
@@ -35,7 +35,7 @@ class BatchReindexer:
 
         articles = [ArticleRecord(**doc) for doc in raw_docs]
 
-        new_chunks: List[ArticleChunk] = []
+        new_chunks: list[ArticleChunk] = []
         for art in articles:
             chunks = self.chunker.chunk_article(art)
             new_chunks.extend(chunks)
