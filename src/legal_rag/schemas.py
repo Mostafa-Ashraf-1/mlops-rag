@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 
 
 class ArticleRecord(BaseModel):
-    article_number: int = Field(..., ge=1, le=1149, description="Sequential article number")
+    article_number: int = Field(..., ge=1, le=2000, description="Sequential article number")
     book: str | None = Field(default=None, description="Book title hierarchy")
     chapter: str | None = Field(default=None, description="Chapter title hierarchy")
     section: str | None = Field(default=None, description="Section title hierarchy")
